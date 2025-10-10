@@ -1,4 +1,4 @@
-FROM debian:bookworm AS openssl
+FROM docker.io/library/debian:bookworm AS openssl
 LABEL maintainer="Matthew Vance"
 
 ENV VERSION_OPENSSL=openssl-3.3.2 \
@@ -55,7 +55,7 @@ RUN set -e -x && \
         /var/tmp/* \
         /var/lib/apt/lists/*
 
-FROM debian:bookworm AS unbound
+FROM docker.io/library/debian:bookworm AS unbound
 LABEL maintainer="Matthew Vance"
 
 ENV NAME=unbound \
@@ -109,7 +109,7 @@ RUN build_deps="curl gcc libc-dev libevent-dev libexpat1-dev libnghttp2-dev make
         /var/lib/apt/lists/*
 
 
-FROM debian:bookworm
+FROM docker.io/library/debian:bookworm
 LABEL maintainer="Matthew Vance"
 
 ENV NAME=unbound \

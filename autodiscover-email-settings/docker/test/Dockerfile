@@ -1,4 +1,4 @@
-FROM alpine:3.12
+FROM docker.io/library/alpine:3.12
 
 COPY docker_test.sh /docker_test.sh
 

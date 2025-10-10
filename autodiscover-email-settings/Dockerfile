@@ -1,4 +1,4 @@
-FROM node:lts-alpine
+FROM docker.io/library/node:lts-alpine
 
 EXPOSE 8000
 
