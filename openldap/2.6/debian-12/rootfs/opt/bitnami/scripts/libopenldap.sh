@@ -816,7 +816,7 @@ EOF
 #########################
 ldap_configure_ppolicy() {
     info "Configuring LDAP ppolicy"
-    ldap_load_module "/opt/bitnami/openldap/lib/openldap" "ppolicy.so"
+    ldap_load_module "/opt/bitnami/openldap/lib" "ppolicy.so"
     # create configuration
     cat > "${LDAP_SHARE_DIR}/ppolicy_create_configuration.ldif" << EOF
 dn: olcOverlay={0}ppolicy,olcDatabase={2}mdb,cn=config
@@ -892,7 +892,7 @@ olcDbIndex: entryUUID eq
 EOF
     debug_execute ldapmodify -Y EXTERNAL -H "ldapi:///" -f "${LDAP_SHARE_DIR}/accesslog_add_indexes.ldif"
     # Load module
-    ldap_load_module "/opt/bitnami/openldap/lib/openldap" "accesslog.so"
+    ldap_load_module "/opt/bitnami/openldap/lib" "accesslog.so"
     # Create AccessLog database
     cat > "${LDAP_SHARE_DIR}/accesslog_create_accesslog_database.ldif" << EOF
 dn: olcDatabase={3}mdb,cn=config
@@ -937,7 +937,7 @@ EOF
 ldap_enable_syncprov() {
     info "Configure Sync Provider"
     # Load module
-    ldap_load_module "/opt/bitnami/openldap/lib/openldap" "syncprov.so"
+    ldap_load_module "/opt/bitnami/openldap/lib" "syncprov.so"
     # Add Sync Provider overlay
     cat > "${LDAP_SHARE_DIR}/syncprov_create_overlay_configuration.ldif" << EOF
 dn: olcOverlay=syncprov,olcDatabase={2}mdb,cn=config

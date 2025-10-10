@@ -152,10 +152,11 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python download_github_tree.py <github-tree-url> [target_dir]")
         print("Example:")
-        print("  python download_github_tree.py https://github.com/bitnami/containers/tree/main/bitnami/openldap")
+        print(
+            "  python download_github_tree.py https://github.com/bitnami/containers/tree/main/bitnami/openldap"
+        )
         sys.exit(1)
 
     url_arg = sys.argv[1]
     out_arg = sys.argv[2] if len(sys.argv) >= 3 else None
     download_github_tree(url_arg, out_arg)
-
