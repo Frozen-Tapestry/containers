@@ -6,9 +6,10 @@ This repo fetches, builds, and publishes container images used by Frozen Tapestr
 
 ## Overview
 
-- **`dl_containers.py`** – downloads source trees from GitHub.  
-- **`hub_full_paths.py`** – fixes Dockerfile `FROM` lines to full Docker Hub paths.  
-- **`download_github_tree.py`** – generic GitHub subtree downloader.
+* **`setup.py`** – main script to download source trees, fix Dockerfiles, and apply text replacements.
+* **`download_github_tree.py`** – generic GitHub subtree downloader.
+* **`hub_full_paths.py`** – normalizes `FROM` lines to full Docker Hub paths.
+* **`replace_in_dir.py`** – utility for recursive multi-string replacements.
 
 ---
 
@@ -31,15 +32,21 @@ Each image builds from its subfolder (`mount_ws`) and is tagged with `latest` an
 ## Manual Usage
 
 ```bash
-# Download source containers
-python3 dl_containers.py
+# Full setup (download + fix + replace)
+python3 setup.py
+```
 
-# Normalize Dockerfiles
+Or run individual steps:
+
+```bash
+python3 download_github_tree.py <github-tree-url>
 python3 hub_full_paths.py
-````
+```
 
 Optional:
 
 ```bash
 export GITHUB_TOKEN=ghp_yourtoken  # for higher GitHub API limits
 ```
+
+---

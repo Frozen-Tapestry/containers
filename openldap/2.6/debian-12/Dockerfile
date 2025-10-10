@@ -14,6 +14,7 @@ RUN install_packages \
       build-essential autoconf automake libtool pkg-config m4 flex bison \
       libssl-dev libsasl2-dev libltdl-dev libevent-dev libargon2-dev libperl-dev \
       unixodbc-dev libwiredtiger-dev libnsl-dev zlib1g-dev groff-base \
+      libcrypt-dev \
       heimdal-dev
 
 WORKDIR /src
@@ -35,8 +36,10 @@ RUN ./configure \
       --localstatedir=/opt/bitnami/openldap/var \
       --libexecdir=/opt/bitnami/openldap/lib \
       --sbindir=/opt/bitnami/openldap/sbin \
+      --with-subdir=. \
       --with-tls=openssl \
       --enable-slapd \
+      --enable-crypt \
       --enable-dynamic \
       --enable-modules \
       --enable-overlays=mod \
