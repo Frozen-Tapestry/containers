@@ -13,7 +13,8 @@ RUN install_packages \
       ca-certificates curl file \
       build-essential autoconf automake libtool pkg-config m4 flex bison \
       libssl-dev libsasl2-dev libltdl-dev libevent-dev libargon2-dev libperl-dev \
-      unixodbc-dev libwiredtiger-dev libnsl-dev zlib1g-dev groff-base
+      unixodbc-dev libwiredtiger-dev libnsl-dev zlib1g-dev groff-base \
+      heimdal-dev
 
 WORKDIR /src
 
@@ -32,6 +33,8 @@ RUN ./configure \
       --prefix=/opt/bitnami/openldap \
       --sysconfdir=/opt/bitnami/openldap/etc \
       --localstatedir=/opt/bitnami/openldap/var \
+      --libexecdir=/opt/bitnami/openldap/lib \
+      --sbindir=/opt/bitnami/openldap/sbin \
       --with-tls=openssl \
       --enable-slapd \
       --enable-dynamic \
@@ -39,11 +42,32 @@ RUN ./configure \
       --enable-overlays=mod \
       --enable-backends=mod \
       --enable-mdb=yes \
-      --libexecdir=/opt/bitnami/openldap/sbin \
-      --sbindir=/opt/bitnami/openldap/sbin \
  && make -j"$(nproc)" \
- && make install \
- && (strip -s /opt/bitnami/openldap/sbin/* 2>/dev/null || true)
+ && make install
+
+RUN set -eux; \
+      export MAKEFLAGS="-j$(nproc)"; \
+      CT_PREFIX_ARGS="prefix=/opt/bitnami/openldap exec_prefix=/opt/bitnami/openldap libexecdir=/opt/bitnami/openldap/libexec"; \
+      for d in \
+          contrib/slapd-modules/autogroup \
+          contrib/slapd-modules/lastbind \
+          contrib/slapd-modules/passwd/pbkdf2 \
+          contrib/slapd-modules/passwd/sha2 \
+      ; do \
+        make -C "$d" ${MAKEFLAGS} ${CT_PREFIX_ARGS}; \
+        make -C "$d" install ${CT_PREFIX_ARGS} mandir=/opt/bitnami/openldap/share/man; \
+      done; \
+      HEIMDAL_INC="-I/usr/include/heimdal"; \
+      HEIMDAL_LIB="-L/usr/lib/x86_64-linux-gnu"; \
+      for d in \
+        contrib/slapd-modules/smbk5pwd \
+      ; do \
+        make -C "$d" ${MAKEFLAGS} ${CT_PREFIX_ARGS} HEIMDAL_INC="$HEIMDAL_INC" HEIMDAL_LIB="$HEIMDAL_LIB"; \
+        make -C "$d" install ${CT_PREFIX_ARGS} mandir=/opt/bitnami/openldap/share/man HEIMDAL_INC="$HEIMDAL_INC" HEIMDAL_LIB="$HEIMDAL_LIB"; \
+      done; \
+      strip -s /opt/bitnami/openldap/sbin/* 2>/dev/null || true; \
+      strip -s /opt/bitnami/openldap/libexec/openldap/* 2>/dev/null || true; \
+      strip -s /opt/bitnami/openldap/lib/openldap/* 2>/dev/null || true
 
 # ---------- Stage 2: final ----------
 FROM ghcr.io/frozen-tapestry/minideb:bookworm
@@ -53,7 +77,7 @@ ARG TARGETARCH
 ENV APP_VERSION="2.6.10" \
     BITNAMI_APP_NAME="openldap" \
     IMAGE_REVISION="6" \
-    PATH="/opt/bitnami/openldap/bin:/opt/bitnami/openldap/sbin:$PATH"
+    PATH="/opt/bitnami/openldap/bin:/opt/bitnami/openldap/sbin:/opt/bitnami/openldap/lib:$PATH"
 
 LABEL org.opencontainers.image.title="openldap" \
       org.opencontainers.image.description="Application packaged by Frozen Tapestry." \
