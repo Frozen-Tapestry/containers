@@ -1,0 +1,38 @@
+# This workflow is necessary in order for the the proper Event to be used
+# so we can pull the source and destination branch details
+name: PR Cache Sync
+
+on:
+  pull_request:
+    branches: [main]
+    types:
+      - closed
+    paths:
+      - Dockerfile
+
+env:
+  DOCKER_BUILDKIT: "1"
+  COSIGN_EXPERIMENTAL: "1"
+
+jobs:
+  cache-sync:
+    name: PR cache sync
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Install regctl
+        uses: iarekylew00t/regctl-installer@496d5c86db0492fa8e224d597b1b5701a0d56025 # v4.0.0
+
+      - name: Copy PR build cache to branch
+        shell: bash
+        run: |
+          IMAGE_NAME=$(echo "${GITHUB_REPOSITORY/docker-/}" | tr '[:upper:]' '[:lower:]')
+          BASE_BRANCH=$(echo "${GITHUB_BASE_REF//[^a-zA-Z0-9]/-}" | tr '[:upper:]' '[:lower:]')
+          HEAD_BRANCH=$(echo "${GITHUB_HEAD_REF//[^a-zA-Z0-9]/-}" | tr '[:upper:]' '[:lower:]')
+          echo "ttl.sh/$IMAGE_NAME:$HEAD_BRANCH --> ttl.sh/$IMAGE_NAME:$BASE_BRANCH"
+          regctl image copy \
+            --verbosity info \
+            --digest-tags \
+            --force-recursive \
+            "ttl.sh/$IMAGE_NAME:$HEAD_BRANCH" \
+            "ttl.sh/$IMAGE_NAME:$BASE_BRANCH"
