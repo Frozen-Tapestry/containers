@@ -50,7 +50,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
       - name: Build ${{ matrix.name }} image
-        uses: Frozen-Tapestry/container-action@develop
+        uses: Frozen-Tapestry/container-action@v1
         with:
           login_registry: ghcr.io
           login_username: ${{ github.actor }}
