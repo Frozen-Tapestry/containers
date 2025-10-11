@@ -93,7 +93,7 @@ ENV HOME="/" \
     OS_FLAVOUR="debian-12" \
     OS_NAME="linux"
 
-COPY --chmod=0755 prebuildfs /
+COPY prebuildfs /
 
 # Install required system packages and dependencies
 RUN install_packages ca-certificates libargon2-1 libcap2-bin libcom-err2 libcrypt1 libgssapi-krb5-2 libk5crypto3 libkeyutils1 libkrb5-3 libkrb5support0 libltdl7 libnsl2 libnss3-tools libodbc2 libperl5.36 libsasl2-2 libssl3 libtirpc3 libwrap0 mdbtools procps psmisc
@@ -102,7 +102,7 @@ COPY --from=builder --chown=1001:0 /opt/bitnami /opt/bitnami
 
 RUN find /usr /opt /bin /sbin -xdev -type f -perm /6000 -exec chmod a-s {} + || true
 
-COPY --chmod=0755 rootfs /
+COPY rootfs /
 RUN /opt/bitnami/scripts/openldap/postunpack.sh
 
 EXPOSE 1389 1636
