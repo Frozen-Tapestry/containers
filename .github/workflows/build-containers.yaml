@@ -32,10 +32,21 @@ jobs:
               ghcr.io/frozen-tapestry/autodiscover:latest
               ghcr.io/frozen-tapestry/autodiscover:1.4.0
           - name: caddy
+            extra_args: --build-arg CADDY_VERSION=2.10.2
             mount_ws: docker-caddy-cloudflare
             tags: >-
               ghcr.io/frozen-tapestry/caddy-cloudflare:latest
               ghcr.io/frozen-tapestry/caddy-cloudflare:2.10.2
+          - name: caddy
+            extra_args: --build-arg CADDY_VERSION=2.10.0
+            mount_ws: docker-caddy-cloudflare
+            tags: >-
+              ghcr.io/frozen-tapestry/caddy-cloudflare:2.10.0
+          - name: caddy
+            extra_args: --build-arg CADDY_VERSION=2.9.1
+            mount_ws: docker-caddy-cloudflare
+            tags: >-
+              ghcr.io/frozen-tapestry/caddy-cloudflare:2.9.1
           - name: baseimage-alpine
             mount_ws: docker-baseimage-alpine
             tags: >-
@@ -46,10 +57,34 @@ jobs:
             tags: >-
               ghcr.io/frozen-tapestry/healthchecks:latest
               ghcr.io/frozen-tapestry/healthchecks:3.11.2
+
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Check if all tags exist
+        id: check
+        env:
+          TAGS: ${{ matrix.tags }}
+        run: |
+          set -euo pipefail
+          echo "Checking tags: $TAGS"
+          all_exist=true
+          for t in $TAGS; do
+            if ! docker manifest inspect "$t" >/dev/null 2>&1; then
+              echo "Tag does not exist: $t"
+              all_exist=false
+            else
+              echo "Tag exists: $t"
+            fi
+          done
+          echo "all_exist=$all_exist" >> "$GITHUB_OUTPUT"
+
       - name: Build ${{ matrix.name }} image
+        if: steps.check.outputs.all_exist != 'true'
         uses: Frozen-Tapestry/container-action@v1
         with:
           login_registry: ghcr.io
@@ -57,6 +92,7 @@ jobs:
           login_password: ${{ secrets.GITHUB_TOKEN }}
           tags: ${{ matrix.tags }} # space-separated list (folded above)
           dockerfile: Dockerfile
+          extra_args: ${{ matrix.extra_args }}
           mount_ws: ${{ github.workspace }}/${{ matrix.mount_ws }} # per-image Dockerfile folder
           security: |
             --security-opt=seccomp=unconfined
