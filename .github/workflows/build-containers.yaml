@@ -38,11 +38,6 @@ jobs:
               ghcr.io/frozen-tapestry/caddy-cloudflare:latest
               ghcr.io/frozen-tapestry/caddy-cloudflare:2.10.2
           - name: caddy
-            extra_args: --build-arg CADDY_VERSION=2.10.1
-            mount_ws: docker-caddy-cloudflare
-            tags: >-
-              ghcr.io/frozen-tapestry/caddy-cloudflare:2.10.1
-          - name: caddy
             extra_args: --build-arg CADDY_VERSION=2.10.0
             mount_ws: docker-caddy-cloudflare
             tags: >-
