@@ -104,6 +104,10 @@ RUN find /usr /opt /bin /sbin -xdev -type f -perm /6000 -exec chmod a-s {} + || 
 
 COPY rootfs /
 RUN /opt/bitnami/scripts/openldap/postunpack.sh
+ENV APP_VERSION="2.6.10" \
+    BITNAMI_APP_NAME="openldap" \
+    IMAGE_REVISION="8" \
+    PATH="/opt/bitnami/openldap/bin:/opt/bitnami/openldap/sbin:$PATH"
 
 EXPOSE 1389 1636
 
