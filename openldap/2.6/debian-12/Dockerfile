@@ -5,8 +5,8 @@ ARG TARGETARCH
 ENV OS_ARCH="${TARGETARCH:-amd64}" \
     OS_FLAVOUR="debian-12" \
     OS_NAME="linux" \
-    OPENLDAP_VERSION="2.6.10" \
-    OPENLDAP_SHA256="c065f04aad42737aebd60b2fe4939704ac844266bc0aeaa1609f0cad987be516"
+    OPENLDAP_VERSION="2.6.13" \
+    OPENLDAP_SHA256="d693b49517a42efb85a1a364a310aed16a53d428d1b46c0d31ef3fba78fcb656"
 
 # Build prerequisites
 RUN install_packages \
@@ -77,7 +77,7 @@ FROM ghcr.io/frozen-tapestry/minideb:bookworm
 
 ARG TARGETARCH
 
-ENV APP_VERSION="2.6.10" \
+ENV APP_VERSION="2.6.13" \
     BITNAMI_APP_NAME="openldap" \
     IMAGE_REVISION="6" \
     PATH="/opt/bitnami/openldap/bin:/opt/bitnami/openldap/sbin:/opt/bitnami/openldap/lib:$PATH"
@@ -104,9 +104,9 @@ RUN find /usr /opt /bin /sbin -xdev -type f -perm /6000 -exec chmod a-s {} + || 
 
 COPY rootfs /
 RUN /opt/bitnami/scripts/openldap/postunpack.sh
-ENV APP_VERSION="2.6.10" \
+ENV APP_VERSION="2.6.13" \
     BITNAMI_APP_NAME="openldap" \
-    IMAGE_REVISION="8" \
+    IMAGE_REVISION="0" \
     PATH="/opt/bitnami/openldap/bin:/opt/bitnami/openldap/sbin:$PATH"
 
 EXPOSE 1389 1636
