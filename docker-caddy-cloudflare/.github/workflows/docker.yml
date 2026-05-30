@@ -2,6 +2,12 @@ name: Docker Build & Release
 
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        type: boolean
+        description: Manually publish (and overwrite) the Docker image, signatures, and release
+        required: false
+        default: false
   push:
     branches: [main]
     paths:
@@ -13,8 +19,6 @@ on:
 
 env:
   DOCKER_BUILDKIT: "1"
-  DOCKER_BUILD_SUMMARY: "false"
-  COSIGN_EXPERIMENTAL: "1"
 
 jobs:
   metadata:
@@ -53,7 +57,7 @@ jobs:
           EOF
 
       - name: Generate Docker image metadata
-        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
         id: docker-metadata
         with:
           images: |
@@ -75,25 +79,26 @@ jobs:
     runs-on: ubuntu-latest
     needs: [metadata]
     permissions:
-      id-token: write
+      contents: read
       pull-requests: write
     outputs:
       image-ref: ttl.sh/${{ needs.metadata.outputs.image-name }}@${{ steps.build.outputs.digest }}
+      module-version: ${{ steps.module.outputs.module-version }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       - name: Install regctl
-        uses: iarekylew00t/regctl-installer@af36fb7a5cbba28bb2f400ea0a7b06fc1c5ea426 # v4.0.10
+        uses: iarekylew00t/regctl-installer@6be4e3e933f847cc1ef6dbbaf97f3366eb283799 # v4.0.12
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       # Why?
       # Since we're building for multiple platforms using QEMU it's takes a decent amount
@@ -116,7 +121,7 @@ jobs:
           echo "'$WORKFLOW_NAME' completed!"
 
       - name: Build CI Docker image
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         id: build
         with:
           context: .
@@ -126,6 +131,24 @@ jobs:
           platforms: ${{ needs.metadata.outputs.platforms }}
           cache-from: type=registry,ref=ttl.sh/${{ needs.metadata.outputs.image-name }}:${{ needs.metadata.outputs.branch-name }}
           cache-to: type=inline,mode=max
+
+      - name: Check docker image and parse cloudflare module version
+        id: module
+        shell: bash
+        env:
+          IMAGE: ttl.sh/${{ needs.metadata.outputs.image-name }}:${{ github.sha }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          docker pull "$IMAGE@$IMAGE_DIGEST"
+          MODULE=$(docker run --rm "$IMAGE@$IMAGE_DIGEST" \
+            caddy list-modules --versions | grep "dns.providers.cloudflare")
+          if [ -z "$MODULE" ]; then
+            echo "::error::cloudflare module not found"
+            exit 1
+          fi
+
+          MODULE_VERSION=$(echo "$MODULE" | awk '{print $2}')
+          echo "module-version=$MODULE_VERSION" | tee -a "$GITHUB_OUTPUT"
 
       # We don't need to sign the CI build because we use the digest as the
       # reference, which is immutable anyways. Tampering is not an issue.
@@ -196,34 +219,38 @@ jobs:
 
   publish:
     name: Publish image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish))
     needs: [metadata, build, trivy]
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
-      packages: write
-      contents: write
+      contents: write # GH release
+      id-token: write # cosign
+      packages: write # GHCR
     steps:
       - name: Checkout repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          token: ${{ secrets.GH_RELEASE_PAT }}
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Login to Docker Hub
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to GitHub Container Repository
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -231,7 +258,7 @@ jobs:
 
       - name: Publish final Docker image
         id: publish
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           push: true
@@ -246,13 +273,14 @@ jobs:
         env:
           IMAGE_NAME: ${{ needs.metadata.outputs.image-name }}
           IMAGE_DIGEST: ${{ steps.publish.outputs.digest }}
+          COSIGN_EXPERIMENTAL: "1"
         run: |
           cosign sign --yes --recursive "docker.io/$IMAGE_NAME@$IMAGE_DIGEST"
           cosign sign --yes --recursive "ghcr.io/$IMAGE_NAME@$IMAGE_DIGEST"
 
       # This will automatically attach the SBOM to the release
       - name: Generate final Docker image SBOM
-        uses: anchore/sbom-action@57aae528053a48a3f6235f2d9461b05fbcb7366d # v0.23.1
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           format: spdx-json
           image: ${{ needs.metadata.outputs.image-name }}@${{ steps.publish.outputs.digest }}
@@ -275,13 +303,13 @@ jobs:
           git push -f -u origin "v$MAJOR.$MINOR.$PATCH"
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           tag_name: v${{ needs.metadata.outputs.caddy-version }}
           make_latest: true
           generate_release_notes: false
           body: |
-            ### [🚀 Caddy v${{ needs.metadata.outputs.caddy-version }} Changelog](https://github.com/caddyserver/caddy/releases/tag/v${{ needs.metadata.outputs.caddy-version }})
+            ### 🚀 Caddy [v${{ needs.metadata.outputs.caddy-version }}](https://github.com/caddyserver/caddy/releases/tag/v${{ needs.metadata.outputs.caddy-version }}) | 📦 Cloudflare module [${{ needs.build.outputs.module-version }}](https://github.com/caddy-dns/cloudflare/releases/tag/${{ needs.build.outputs.module-version }})
 
             ## 🐳 Docker Images
 
