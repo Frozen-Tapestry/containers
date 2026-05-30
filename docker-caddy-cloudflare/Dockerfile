@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG CADDY_VERSION=2.11.2
+ARG CADDY_VERSION=2.11.3
 
 FROM docker.io/library/caddy:${CADDY_VERSION}-builder AS builder
 RUN xcaddy build \
