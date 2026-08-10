@@ -6,7 +6,7 @@ ENV OS_ARCH="${TARGETARCH:-amd64}" \
     OS_FLAVOUR="debian-12" \
     OS_NAME="linux" \
     OPENLDAP_VERSION="2.6.14" \
-    OPENLDAP_SHA256="d693b49517a42efb85a1a364a310aed16a53d428d1b46c0d31ef3fba78fcb656"
+    OPENLDAP_SHA256="806dcd21d366428187fba3278da773d5930f774852c9e92517f950d585f19107"
 
 # Build prerequisites
 RUN install_packages \
