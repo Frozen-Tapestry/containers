@@ -21,8 +21,8 @@ jobs:
             tags: >-
               ghcr.io/frozen-tapestry/openldap:latest
               ghcr.io/frozen-tapestry/openldap:2.6
-              ghcr.io/frozen-tapestry/openldap:2.6.13
-              ghcr.io/frozen-tapestry/openldap:2.6.13-6
+              ghcr.io/frozen-tapestry/openldap:2.6.14
+              ghcr.io/frozen-tapestry/openldap:2.6.14-0
           - name: unbound
             mount_ws: unbound
             tags: >-
@@ -32,22 +32,22 @@ jobs:
             mount_ws: autodiscover-email-settings
             tags: >-
               ghcr.io/frozen-tapestry/autodiscover:latest
-              ghcr.io/frozen-tapestry/autodiscover:1.4.0-20
+              ghcr.io/frozen-tapestry/autodiscover:1.4.1
           - name: caddy
-            extra_args: --build-arg CADDY_VERSION=2.11.3
+            extra_args: --build-arg CADDY_VERSION=2.11.4
             mount_ws: docker-caddy-cloudflare
             tags: >-
-              ghcr.io/frozen-tapestry/caddy-cloudflare:2.11.3
+              ghcr.io/frozen-tapestry/caddy-cloudflare:2.11.4
           - name: baseimage-alpine
             mount_ws: docker-baseimage-alpine
             tags: >-
               ghcr.io/frozen-tapestry/baseimage-alpine:latest
-              ghcr.io/frozen-tapestry/baseimage-alpine:3.23
+              ghcr.io/frozen-tapestry/baseimage-alpine:3.24
           - name: healthchecks
             mount_ws: docker-healthchecks
             tags: >-
               ghcr.io/frozen-tapestry/healthchecks:latest
-              ghcr.io/frozen-tapestry/healthchecks:v4.2-ls347
+              ghcr.io/frozen-tapestry/healthchecks:v4.3-ls356
 
     steps:
       - name: Checkout

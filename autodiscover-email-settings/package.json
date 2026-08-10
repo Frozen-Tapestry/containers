@@ -39,5 +39,8 @@
     "koa-swig": "^2.0.0",
     "minimist": "^1.2.6",
     "qs": "^6.10.3"
+  },
+  "resolutions": {
+    "multiparty": "4.2.3"
   }
 }
